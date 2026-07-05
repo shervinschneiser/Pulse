@@ -9,3 +9,8 @@ app = FastAPI(
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"message": "Pulse API"}
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"message": "OK"}
