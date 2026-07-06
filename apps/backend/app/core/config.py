@@ -1,16 +1,23 @@
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Pulse"
+    app_name: str = "Pulse"
+    app_env: str = "development"
+    app_debug: bool = False
 
-    APP_ENV: str = "development"
-    APP_DEBUG: bool = True
+    database_url: str
+    redis_url: str
 
-    DATABASE_URL: str
-    REDIS_URL: str
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+        case_sensitive=False,
+    )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
