@@ -1,3 +1,4 @@
+from secrets import token_hex
 from uuid import UUID
 
 from sqlalchemy import select
@@ -12,7 +13,10 @@ class WebhookRepository:
         self.db = db
 
     async def create(self, data: WebhookCreate) -> Webhook:
-        webhook = Webhook(**data.model_dump())
+        webhook = Webhook(
+            **data.model_dump(),
+            secret=token_hex(32),
+        )
 
         self.db.add(webhook)
         await self.db.commit()

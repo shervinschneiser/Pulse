@@ -31,3 +31,10 @@ class Webhook(BaseModel):
         default=WebhookStatus.ACTIVE,
         nullable=False,
     )
+
+    secret: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
