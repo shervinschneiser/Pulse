@@ -1,15 +1,13 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_db
+from app.api.deps import WebhookServiceDep
 from app.schemas.webhook import (
     WebhookCreate,
     WebhookRead,
     WebhookUpdate,
 )
-from app.services.webhook import WebhookService
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
@@ -21,9 +19,8 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 )
 async def create_webhook(
     payload: WebhookCreate,
-    db: AsyncSession = Depends(get_db),
+    service: WebhookServiceDep = Depends(WebhookServiceDep),
 ):
-    service = WebhookService(db)
     return await service.create(payload)
 
 
@@ -32,9 +29,8 @@ async def create_webhook(
     response_model=list[WebhookRead],
 )
 async def list_webhooks(
-    db: AsyncSession = Depends(get_db),
+    service: WebhookServiceDep = Depends(WebhookServiceDep),
 ):
-    service = WebhookService(db)
     return await service.list()
 
 
@@ -44,9 +40,8 @@ async def list_webhooks(
 )
 async def get_webhook(
     webhook_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    service: WebhookServiceDep = Depends(WebhookServiceDep),
 ):
-    service = WebhookService(db)
     return await service.get(webhook_id)
 
 
@@ -57,9 +52,8 @@ async def get_webhook(
 async def update_webhook(
     webhook_id: UUID,
     payload: WebhookUpdate,
-    db: AsyncSession = Depends(get_db),
+    service: WebhookServiceDep = Depends(WebhookServiceDep),
 ):
-    service = WebhookService(db)
     return await service.update(webhook_id, payload)
 
 
@@ -69,9 +63,8 @@ async def update_webhook(
 )
 async def delete_webhook(
     webhook_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    service: WebhookServiceDep = Depends(WebhookServiceDep),
 ):
-    service = WebhookService(db)
     await service.delete(webhook_id)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
