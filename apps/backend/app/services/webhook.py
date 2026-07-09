@@ -1,4 +1,5 @@
 from uuid import UUID
+import json
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.webhook import Webhook
 from app.repositories.webhook import WebhookRepository
 from app.schemas.webhook import WebhookCreate, WebhookUpdate
+from app.core.security import generate_signature
 
 
 class WebhookService:
@@ -42,3 +44,19 @@ class WebhookService:
         webhook = await self.get(webhook_id)
 
         await self.repository.delete(webhook)
+
+    async def sign_payload(
+        self,
+        webhook: Webhook,
+        payload: dict,
+    ) -> str:
+        body = json.dumps(
+            payload,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+
+        return generate_signature(
+            body,
+            webhook.secret,
+        )
