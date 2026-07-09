@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 
 from sqlalchemy import Enum, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
 
@@ -37,4 +37,10 @@ class Webhook(BaseModel):
         nullable=False,
         unique=True,
         index=True,
+    )
+
+    events = relationship(
+        "WebhookEvent",
+        back_populates="webhook",
+        cascade="all, delete-orphan",
     )

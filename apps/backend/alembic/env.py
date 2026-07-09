@@ -10,6 +10,7 @@ from app.db.base import Base
 
 # Import models so Alembic can discover them
 import app.models.webhook  # noqa: F401
+import app.models.webhook_event  # noqa: F401
 
 config = context.config
 
