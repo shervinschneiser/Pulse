@@ -5,6 +5,7 @@ import httpx
 from app.core.security import generate_signature
 from app.models.webhook import Webhook
 from app.models.webhook_event import WebhookEvent
+from app.schemas.webhook_event import WebhookEventStatus
 
 
 class DeliveryService:
@@ -29,13 +30,26 @@ class DeliveryService:
             "X-Pulse-Signature": signature,
         }
 
-        response = await self.client.post(
-            webhook.target_url,
-            json=payload,
-            headers=headers,
-        )
+        try:
+            response = await self.client.post(
+                webhook.target_url,
+                json=payload,
+                headers=headers,
+            )
 
-        return response
+            if response.is_success:
+                event.status = WebhookEventStatus.SUCCESS
+                event.last_error = None
+            else:
+                event.status = WebhookEventStatus.FAILED
+                event.last_error = response.text[:1000]
+
+            return response
+
+        except httpx.HTTPError as exc:
+            event.status = WebhookEventStatus.FAILED
+            event.last_error = str(exc)
+            raise
 
     async def close(self) -> None:
         await self.client.aclose()
