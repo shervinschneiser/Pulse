@@ -58,6 +58,16 @@ class WebhookEvent(Base):
         nullable=False,
     )
 
+    response_status_code: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    response_body: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     attempts: Mapped[int] = mapped_column(
         Integer,
         default=0,

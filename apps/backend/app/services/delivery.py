@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import generate_signature
 from app.models.webhook import Webhook
 from app.models.webhook_event import WebhookEvent
-from app.schemas.webhook_event import WebhookEventStatus
+from app.models.webhook_event import WebhookEventStatus
 
 
 class DeliveryService:
-    def __init__(self) -> None:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.client = httpx.AsyncClient(timeout=10)
 
     async def deliver(
@@ -17,8 +19,6 @@ class DeliveryService:
         webhook: Webhook,
         event: WebhookEvent,
     ) -> httpx.Response:
-        payload = event.payload
-
         signature = generate_signature(
             payload=event.payload_json.encode(),
             secret=webhook.secret,
@@ -33,23 +33,32 @@ class DeliveryService:
         try:
             response = await self.client.post(
                 webhook.target_url,
-                json=payload,
+                json=event.payload,
                 headers=headers,
             )
+
+            event.response_status = response.status_code
+            event.response_body = response.text
 
             if response.is_success:
                 event.status = WebhookEventStatus.SUCCESS
                 event.last_error = None
             else:
                 event.status = WebhookEventStatus.FAILED
-                event.last_error = response.text[:1000]
+                event.last_error = response.text
 
-            return response
-
-        except httpx.HTTPError as exc:
+        except Exception as exc:
             event.status = WebhookEventStatus.FAILED
             event.last_error = str(exc)
+            event.response_status = None
+            event.response_body = None
             raise
+
+        finally:
+            await self.db.commit()
+            await self.db.refresh(event)
+
+        return response
 
     async def close(self) -> None:
         await self.client.aclose()
