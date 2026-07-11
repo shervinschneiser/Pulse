@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 from uuid import UUID
 
-from celery import shared_task
 from sqlalchemy import select
 
+from app.core.celery import celery_app
 from app.db.session import AsyncSessionLocal
 from app.models.webhook import Webhook
 from app.models.webhook_event import WebhookEvent
 from app.services.delivery import DeliveryService
 
 
-@shared_task(
+@celery_app.task(
     bind=True,
     autoretry_for=(),
 )
@@ -20,8 +21,6 @@ def deliver_webhook(
     webhook_id: str,
     event_id: str,
 ) -> None:
-    import asyncio
-
     asyncio.run(
         _deliver(
             UUID(webhook_id),
