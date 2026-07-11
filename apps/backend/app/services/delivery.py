@@ -7,6 +7,7 @@ from app.core.security import generate_signature
 from app.models.webhook import Webhook
 from app.models.webhook_event import WebhookEvent
 from app.models.webhook_event import WebhookEventStatus
+from app.services.retry import RetryService
 
 
 class DeliveryService:
@@ -37,7 +38,7 @@ class DeliveryService:
                 headers=headers,
             )
 
-            event.response_status = response.status_code
+            event.response_status_code = response.status_code
             event.response_body = response.text
 
             if response.is_success:
@@ -46,12 +47,15 @@ class DeliveryService:
             else:
                 event.status = WebhookEventStatus.FAILED
                 event.last_error = response.text
+                RetryService.schedule_retry(event)
 
         except Exception as exc:
             event.status = WebhookEventStatus.FAILED
             event.last_error = str(exc)
-            event.response_status = None
+            event.response_status_code = None
             event.response_body = None
+
+            RetryService.schedule_retry(event)
             raise
 
         finally:
