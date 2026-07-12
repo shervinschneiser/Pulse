@@ -16,6 +16,12 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
+    beat_schedule={
+        "retry-pending-webhooks": {
+            "task": "retry_pending_webhooks",
+            "schedule": 30.0,
+        },
+    },
 )
 
 celery_app.autodiscover_tasks(
